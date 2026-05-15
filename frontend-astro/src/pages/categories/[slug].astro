@@ -1,0 +1,38 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getPosts, getCategory } from '../../lib/api.js';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+let posts = [];
+let category = null;
+let error = '';
+try {
+  category = await getCategory(slug);
+  const res = await getPosts({ category: slug });
+  posts = res.data || [];
+} catch (e) {
+  error = e.message;
+}
+---
+
+<Layout>
+  {error && <p class="text-red-500 text-sm">⚠️ {error}</p>}
+  <h1 class="text-3xl font-bold mb-2">📁 {category?.name || slug}</h1>
+  <p class="text-gray-400 text-sm mb-6">{category?._count?.posts ?? posts.length} 篇文章</p>
+
+  <div class="space-y-5">
+    {posts.length === 0 && !error && <p class="text-gray-400">暂无文章</p>}
+    {posts.map((post) => (
+      <article class="border-b pb-4 last:border-0">
+        <a href={`/posts/${post.slug}`} class="text-lg font-semibold hover:text-blue-600 transition-colors">
+          {post.title}
+        </a>
+        {post.excerpt && <p class="text-gray-500 text-sm mt-1">{post.excerpt}</p>}
+        <p class="text-xs text-gray-400 mt-1">❤️ {post.likes ?? 0}</p>
+      </article>
+    ))}
+  </div>
+</Layout>

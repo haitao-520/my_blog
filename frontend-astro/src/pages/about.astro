@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getSiteSettings } from '../lib/settings.js';
+const { authorName } = await getSiteSettings();
+---
+<Layout>
+<section class="max-w-2xl mx-auto">
+<div class="text-center mb-10">
+<img src="/avatar.jpg" alt={authorName} class="w-24 h-24 rounded-full object-cover shadow-lg ring-4 ring-white mx-auto" />
+<h1 class="text-3xl font-extrabold text-gray-900">{authorName}</h1>
+<p class="text-gray-500 mt-1">写代码，读闲书，听音乐。</p>
+</div>
+<div class="prose max-w-none bg-white rounded-2xl border border-gray-100 p-8 shadow-sm space-y-6 text-gray-700 leading-relaxed">
+<p>
+你好，我是{authorName}。一名普通的开发者，喜欢用文字记录技术思考和生活片段。</p>
+      <p>
+        这个博客主要用来分享编程心得、读书笔记和一些随笔。如果在某个问题上踩过坑，会尽量把排查过程写清楚，希望能帮到后来的人。
+      </p>
+
+      <h2>联系方式</h2>
+      <ul>
+        <li>📧 邮箱：<code>your-email@example.com</code></li>
+        <li>💻 GitHub：<a href="https://github.com/yourname">github.com/yourname</a></li>
+      </ul>
+
+      <h2>关于本站</h2>
+      <p>
+        基于 Astro + Vue3 构建，后台使用 React + Tiptap 编辑器，后端 Node.js + Prisma + SQLite。全部代码在手机上写完运行。
+      </p>
+    </div>
+  </section>
+</Layout>

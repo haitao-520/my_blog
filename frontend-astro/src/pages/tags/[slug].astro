@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getPosts, getTag } from '../../lib/api.js';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+let posts = [];
+let tag = null;
+let error = '';
+try {
+  tag = await getTag(slug);
+  const res = await getPosts({ tag: slug });
+  posts = res.data || [];
+} catch (e) {
+  error = e.message;
+}
+
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : ''; }
+---
+
+<Layout>
+  {error && <p class="text-red-500 text-sm">⚠️ {error}</p>}
+  <h1 class="text-3xl font-bold mb-2">🏷️ {tag?.name || slug}</h1>
+  <p class="text-gray-400 text-sm mb-6">{tag?._count?.posts ?? posts.length} 篇文章</p>
+
+  <div class="space-y-5">
+    {posts.length === 0 && !error && <p class="text-gray-400">暂无文章</p>}
+    {posts.map((post) => (
+      <article class="border-b pb-4 last:border-0">
+        <a href={`/posts/${post.slug}`} class="text-lg font-semibold hover:text-blue-600 transition-colors">
+          {post.title}
+        </a>
+        {post.excerpt && <p class="text-gray-500 text-sm mt-1">{post.excerpt}</p>}
+        <p class="text-xs text-gray-400 mt-1">{formatDate(post.publishedAt)} · ❤️ {post.likes ?? 0}</p>
+      </article>
+    ))}
+  </div>
+</Layout>

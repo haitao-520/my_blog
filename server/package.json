@@ -1,0 +1,30 @@
+{
+  "name": "blog-server",
+  "version": "1.0.0",
+  "description": "个人博客后端 API",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "db:migrate": "npx prisma migrate dev --name init",
+    "db:push": "npx prisma db push",
+    "db:studio": "npx prisma studio",
+    "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "adm-zip": "^0.5.17",
+    "archiver": "^7.0.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.1.0"
+  }
+}

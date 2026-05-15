@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用户 ====================
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  password     String
+  tokenVersion Int       @default(0)
+  Post         Post[]
+}
+
+// ==================== 文章 ====================
+model Like {
+  id        String   @id @default(uuid())
+  anonId    String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([anonId, postId])
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  content     String    // JSON string, Tiptap 编辑器输出
+  excerpt     String?
+  cover       String?
+  likes       Int       @default(0) // 点赞数
+  status      String    @default("draft") // draft | published
+  visibility  String    @default("public") // public | private | password
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 作者
+  authorId    String?
+  author      User?     @relation(fields: [authorId], references: [id])
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  tags        PostTag[]
+  comments    Comment[]
+  likes_records Like[]   // 点赞记录
+}
+
+// ==================== 分类 ====================
+model Category {
+  id       String    @id @default(uuid())
+  name     String
+  slug     String    @unique
+  parentId String?
+  parent   Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  posts    Post[]
+}
+
+// ==================== 标签 与 关联表 ====================
+model Tag {
+  id    String    @id @default(uuid())
+  name  String
+  slug  String    @unique
+  posts PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+// ==================== 评论 ====================
+model Comment {
+  id         String   @id @default(uuid())
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorName String
+  email      String
+  content    String
+  status     String   @default("pending") // pending | approved | spam
+  createdAt  DateTime @default(now())
+}
+
+// ==================== 设置 ====================
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+model Media {
+  id        String   @id @default(uuid())
+  filename  String
+  url       String
+  alt       String?
+  createdAt DateTime @default(now())
+}

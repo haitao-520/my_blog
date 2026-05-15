@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SearchPage from '../components/SearchPage.vue';
+---
+
+<Layout>
+  <h1 class="text-3xl font-bold mb-2">🔍 搜索</h1>
+  <p class="text-gray-400 text-sm mb-8">搜索你想看的文章</p>
+  <SearchPage client:load />
+</Layout>

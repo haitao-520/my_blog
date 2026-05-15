@@ -1,0 +1,63 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getPosts } from '../lib/api.js';
+
+let groups = [];
+let error = '';
+try {
+  // 获取所有已发布文章（上限 500 篇）
+  const res = await getPosts({ status: 'published', limit: '500' });
+  const posts = res.data || [];
+
+  // 按年月分组
+  const map = {};
+  for (const p of posts) {
+    const d = new Date(p.publishedAt || p.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!map[key]) map[key] = { year: d.getFullYear(), month: d.getMonth() + 1, posts: [] };
+    map[key].posts.push(p);
+  }
+  groups = Object.values(map).sort((a, b) => b.year - a.year || b.month - a.month);
+} catch (e) {
+  error = e.message;
+}
+
+function dayOnly(d) {
+  return d ? new Date(d).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
+}
+---
+
+<Layout>
+  <h1 class="text-3xl font-bold mb-2">📅 归档</h1>
+  <p class="text-gray-400 text-sm mb-8">按时间浏览所有文章</p>
+  {error && <p class="text-red-500 text-sm mb-4">⚠️ {error}</p>}
+
+  {groups.length === 0 && !error && (
+    <div class="text-center py-20">
+      <div class="text-5xl mb-3">📭</div>
+      <p class="text-gray-400">暂无文章</p>
+    </div>
+  )}
+
+  <div class="space-y-10">
+    {groups.map((g) => (
+      <section>
+        <div class="flex items-baseline gap-3 mb-4">
+          <h2 class="text-xl font-bold text-gray-800">
+            {g.year}<span class="text-gray-400 font-normal">.</span>{String(g.month).padStart(2, '0')}
+          </h2>
+          <span class="text-xs text-gray-400">{g.posts.length} 篇</span>
+        </div>
+        <div class="space-y-1">
+          {g.posts.map((p) => (
+            <a href={`/posts/${p.slug}`} class="group flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-white transition-all">
+              <time class="text-xs text-gray-400 w-24 shrink-0 text-right tabular-nums">{dayOnly(p.publishedAt)}</time>
+              <span class="text-sm text-gray-700 group-hover:text-blue-600 transition-colors truncate flex-1">{p.title}</span>
+              <span class="text-xs text-gray-400 shrink-0">❤️ {p.likes ?? 0}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</Layout>

@@ -1,0 +1,157 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CommentSection from '../../components/CommentSection.vue';
+import LikeButton from '../../components/LikeButton.vue';
+import { getPost, getComments } from '../../lib/api.js';
+import { getSiteSettings } from '../../lib/settings.js';
+export const prerender = false;
+const { slug } = Astro.params;
+const { authorName } = await getSiteSettings();
+
+let post = null;
+let comments = [];
+let error = '';
+try {
+  post = await getPost(slug);
+  // SSR 获取评论
+  try { const c = await getComments(post.id); comments = c.data || []; } catch {}
+} catch (e) {
+  error = e.message;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+
+// 服务端 Tiptap JSON → HTML
+function renderTiptap(contentStr) {
+  let doc;
+  try { doc = typeof contentStr === 'string' ? JSON.parse(contentStr) : contentStr; } catch { return ''; }
+  if (!doc?.content) return '';
+
+  function getText(node) {
+    if (!node.content) return '';
+    let result = '';
+    for (const child of node.content) {
+      if (child.type === 'text') {
+        let t = child.text || '';
+        if (child.marks) for (const m of child.marks) {
+          if (m.type === 'bold') t = `<strong>${t}</strong>`;
+          else if (m.type === 'italic') t = `<em>${t}</em>`;
+          else if (m.type === 'code') t = `<code>${t}</code>`;
+          else if (m.type === 'strike') t = `<s>${t}</s>`;
+          else if (m.type === 'link') t = `<a href="${m.attrs?.href || '#'}">${t}</a>`;
+        }
+        result += t;
+      } else if (child.type === 'hardBreak') { result += '<br>'; }
+      else { result += getText(child); }
+    }
+    return result.trim();
+  }
+
+  const html = [];
+  for (const node of doc.content) {
+    switch (node.type) {
+      case 'heading': html.push(`<h${node.attrs?.level||1}>${getText(node)}</h${node.attrs?.level||1}>`); break;
+      case 'paragraph': html.push(`<p>${getText(node)}</p>`); break;
+      case 'bulletList': {
+        let items = '';
+        for (const item of (node.content||[])) if (item.type==='listItem') items += `<li>${getText(item)}</li>`;
+        html.push(`<ul>${items}</ul>`); break;
+      }
+      case 'orderedList': {
+        let items = '';
+        for (const item of (node.content||[])) if (item.type==='listItem') items += `<li>${getText(item)}</li>`;
+        html.push(`<ol>${items}</ol>`); break;
+      }
+      case 'blockquote': {
+        let inner = '';
+        for (const child of (node.content||[])) inner += `<p>${getText(child)}</p>`;
+        html.push(`<blockquote>${inner}</blockquote>`); break;
+      }
+      case 'codeBlock': html.push(`<pre><code class="language-${node.attrs?.language||''}">${getText(node)}</code></pre>`); break;
+      case 'image': html.push(`<img src="${node.attrs?.src||''}" alt="" />`); break;
+      case 'horizontalRule': html.push('<hr>'); break;
+    }
+  }
+  return html.join('');
+}
+
+const bodyHtml = post ? renderTiptap(post.content) : '';
+---
+
+<Layout>
+  {error && (
+    <div class="p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 mb-8">⚠️ {error}</div>
+  )}
+
+  {post && (
+    <article>
+      <!-- 文章头部 -->
+      <header class="mb-10">
+        <div class="flex flex-wrap items-center gap-1.5 text-sm text-gray-400 mb-4">
+          <a href="/" class="hover:text-blue-600 transition-colors">首页</a>
+          <span>/</span>
+          {post.category && (
+            <>
+              <a href={`/categories/${post.category.slug}`} class="hover:text-blue-600 transition-colors">{post.category.name}</a>
+              <span>/</span>
+            </>
+          )}
+          <span class="text-gray-500 truncate">{post.title}</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 leading-tight mb-4">
+          {post.title}
+        </h1>
+
+        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+          <time class="inline-flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            {formatDate(post.publishedAt || post.createdAt)}
+          </time>
+          {authorName && <span>👤 {authorName}</span>}
+          <span class="inline-flex items-center gap-1.5">💬 {post.commentCount ?? 0} 条评论</span>
+        </div>
+
+        {post.tags?.length > 0 && (
+          <div class="flex flex-wrap gap-2 mt-4">
+            {post.tags.map((t) => (
+              <a href={`/tags/${t.slug}`} class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                # {t.name}
+              </a>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <!-- 封面图 -->
+      {post.cover && (
+        <img src={post.cover} alt={post.title} class="w-full rounded-2xl mb-10 max-h-[28rem] object-cover shadow-lg" />
+      )}
+
+      <!-- 正文（SSR 渲染，秒出）-->
+      <div class="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm">
+        <div class="prose max-w-none" set:html={bodyHtml} />
+      </div>
+
+      <!-- 点赞 -->
+      <div class="mt-6 flex justify-center">
+        <LikeButton postId={post.id} initialLikes={post.likes} client:only="vue" />
+      </div>
+
+      <!-- 评论区 -->
+      <div class="mt-8">
+        <CommentSection postId={post.id} comments={comments} client:only="vue" />
+      </div>
+    </article>
+  )}
+
+  {!post && !error && (
+    <div class="text-center py-20">
+      <div class="text-5xl mb-3">📄</div>
+      <p class="text-gray-400">文章不存在</p>
+    </div>
+  )}
+</Layout>
