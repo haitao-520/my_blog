@@ -1,6 +1,6 @@
-#haitao的博客
+# haitao的博客
 
-Astro + React + Express + SQLite 全栈博客，手机/服务器都能跑。
+Astro + React + Express + SQLite 简单的全栈博客，手机/服务器都能跑。
 
 ## 技术栈
 
@@ -47,6 +47,14 @@ ufw allow 3000/tcp
 ufw allow 4321/tcp
 ufw allow 5173/tcp
 ```
+## 修改作者页
+
+blog/frontend-astro/src/layouts/Layout.astro
+
+## 修改头像
+
+blog/frontend-astro/public/avatar.jpg
+（图片改成相同名字替换即可）
 
 ## 修改密码
 
@@ -55,7 +63,3 @@ ufw allow 5173/tcp
 ## 数据导入导出
 
 后台 → 设置 → 导出/导入。支持 JSON/ZIP，含图片打包。旧服务器导出 → 新服务器导入即可迁移。
-
-## 许可
-
-MIT
