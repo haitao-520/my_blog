@@ -11,8 +11,8 @@ export function AuthProvider({ children }) {
     } catch { return null; }
   });
 
-  const login = useCallback(async (username, password) => {
-    const data = await authAPI.login(username, password);
+  const login = useCallback(async (username, password, captchaToken, captchaAnswer) => {
+    const data = await authAPI.login({ username, password, captchaToken, captchaAnswer });
     const u = { username: data.user.username, token: data.token, loggedAt: Date.now() };
     localStorage.setItem('blog_admin_user', JSON.stringify(u));
     setUser(u);

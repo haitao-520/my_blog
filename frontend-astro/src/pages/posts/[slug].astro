@@ -132,8 +132,8 @@ const bodyHtml = post ? renderTiptap(post.content) : '';
       )}
 
       <!-- 正文（SSR 渲染，秒出）-->
-      <div class="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm">
-        <div class="prose max-w-none" set:html={bodyHtml} />
+      <div class="bg-white rounded-2xl border border-gray-500 p-6 sm:p-8 shadow-sm">
+        <div class="prose max-w-none text-gray-800" set:html={bodyHtml} />
       </div>
 
       <!-- 点赞 -->

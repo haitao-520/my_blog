@@ -3,11 +3,18 @@ import Layout from '../layouts/Layout.astro';
 import { getPosts } from '../lib/api.js';
 import { getSiteSettings } from '../lib/settings.js';
 
+const url = new URL(Astro.request.url);
+const currentPage = parseInt(url.searchParams.get('page') || '1', 10);
+const sort = url.searchParams.get('sort') || 'date';
+const limit = 6;
+
 let posts = [];
+let pagination = { page: 1, limit, total: 0, totalPages: 1 };
 let error = '';
 try {
-  const res = await getPosts({ limit: '10' });
+  const res = await getPosts({ page: String(currentPage), limit: String(limit), status: 'published', sort });
   posts = res.data || [];
+  pagination = res.pagination || pagination;
 } catch (e) {
   error = e.message;
 }
@@ -17,6 +24,19 @@ const { siteTitle, siteDesc } = await getSiteSettings();
 function formatDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+
+function pageUrl(p) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set('page', String(p));
+  return u.pathname + u.search;
+}
+
+function sortUrl(s) {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set('sort', s);
+  u.searchParams.set('page', '1'); // 切换排序重置到第一页
+  return u.pathname + u.search;
 }
 ---
 
@@ -37,6 +57,17 @@ function formatDate(d) {
     </div>
   )}
 
+  <!-- 排序 -->
+  <div class="flex items-center gap-2 mb-4">
+    <span class="text-xs text-gray-400 mr-1">排序：</span>
+    <a href={sortUrl('date')} class={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${sort === 'date' ? 'bg-gray-300 text-gray-700 border-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
+      📅 按日期
+    </a>
+    <a href={sortUrl('likes')} class={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${sort === 'likes' ? 'bg-gray-300 text-gray-700 border-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
+      ❤️ 按点赞
+    </a>
+  </div>
+
   <!-- 文章列表 -->
   <div class="space-y-5">
     {posts.length === 0 && !error && (
@@ -48,7 +79,7 @@ function formatDate(d) {
     )}
 
     {posts.map((post) => (
-      <article class="group bg-white rounded-xl border border-gray-100 p-6 hover:shadow-lg hover:border-blue-100 transition-all duration-300">
+      <article class="group bg-white rounded-xl border border-gray-500 p-6 hover:shadow-md hover:border-gray-600 transition-all duration-300">
         <div class="flex items-start gap-4">
           {post.cover && (
             <img src={post.cover} alt={post.title} class="w-24 h-24 rounded-lg object-cover shrink-0 hidden sm:block" />
@@ -84,4 +115,40 @@ function formatDate(d) {
       </article>
     ))}
   </div>
+
+  <!-- 分页导航 -->
+  {pagination.totalPages > 1 && (
+    <nav class="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-100">
+      {currentPage > 1 ? (
+        <a href={pageUrl(currentPage - 1)} class="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 hover:border-blue-200 transition-colors">
+          ← 上一页
+        </a>
+      ) : (
+        <span class="px-4 py-2 rounded-lg border border-gray-100 text-sm text-gray-300 cursor-not-allowed">← 上一页</span>
+      )}
+
+      <div class="hidden sm:flex items-center gap-1">
+        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
+          p === currentPage ? (
+            <span class="w-9 h-9 rounded-lg bg-blue-600 text-white text-sm font-medium flex items-center justify-center">{p}</span>
+          ) : (
+            <a href={pageUrl(p)} class="w-9 h-9 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 hover:border-blue-200 transition-colors flex items-center justify-center">{p}</a>
+          )
+        ))}
+      </div>
+
+      <!-- 手机端页数 -->
+      <span class="sm:hidden text-sm text-gray-500 tabular-nums">
+        {currentPage} / {pagination.totalPages}
+      </span>
+
+      {currentPage < pagination.totalPages ? (
+        <a href={pageUrl(currentPage + 1)} class="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 hover:border-blue-200 transition-colors">
+          下一页 →
+        </a>
+      ) : (
+        <span class="px-4 py-2 rounded-lg border border-gray-100 text-sm text-gray-300 cursor-not-allowed">下一页 →</span>
+      )}
+    </nav>
+  )}
 </Layout>

@@ -11,11 +11,15 @@ async function listPosts(req, res) {
       search,
       page = '1',
       limit = '10',
+      sort = 'date',
     } = req.query;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
     const skip = (pageNum - 1) * limitNum;
+
+    // 排序：date=按发布日期倒序，likes=按点赞数倒序
+    const orderBy = sort === 'likes' ? { likes: 'desc' } : { publishedAt: 'desc' };
 
     // 构建 where 条件
     const where = {};
@@ -53,7 +57,7 @@ async function listPosts(req, res) {
         where,
         skip,
         take: limitNum,
-        orderBy: { publishedAt: 'desc' },
+        orderBy,
         select: {
           id: true,
           title: true,

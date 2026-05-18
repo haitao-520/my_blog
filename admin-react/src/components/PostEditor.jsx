@@ -264,7 +264,7 @@ export default function PostEditor({ editId = null }) {
       tags: selectedTags.filter((t) => t.id !== '__new__').map((t) => ({ id: t.id, name: t.name, slug: t.slug })),
       status: publishStatus || status,
       visibility,
-      publishedAt: publishStatus === 'published' ? new Date().toISOString() : publishedAt || null,
+      publishedAt: publishStatus === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt || null,
     };
     try {
       if (editId) {

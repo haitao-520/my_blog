@@ -17,7 +17,7 @@ const adminUrl = isLocal || !rawAdminUrl?.includes('localhost')
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{siteTitle}</title>
   </head>
-  <body class="min-h-screen flex flex-col bg-amber-50 text-gray-800">
+  <body class="min-h-screen flex flex-col bg-white text-gray-800">
     <!-- 导航 -->
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 shadow-sm">
       <nav class="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between text-sm font-medium">
@@ -41,7 +41,7 @@ const adminUrl = isLocal || !rawAdminUrl?.includes('localhost')
     </main>
 
     <!-- 页脚 -->
-    <footer class="border-t border-gray-200 bg-white/60 backdrop-blur">
+    <footer class="border-t border-gray-200 bg-white">
       <div class="max-w-5xl mx-auto px-5 py-6 text-center text-sm text-gray-500">
         <p>&copy; 2026 {authorName || siteTitle}. Powered by Astro &amp; Vue.</p>
       </div>

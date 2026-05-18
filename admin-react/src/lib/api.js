@@ -35,7 +35,7 @@ async function request(path, options = {}) {
 
 // Auth
 export const authAPI = {
-  login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password } }),
+  login: ({ username, password, captchaToken, captchaAnswer }) => request('/auth/login', { method: 'POST', body: { username, password, captchaToken, captchaAnswer } }),
 };
 
 // Posts
