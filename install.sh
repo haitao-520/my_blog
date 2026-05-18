@@ -96,6 +96,14 @@ if [ "$USE_BINARY_TARGETS" = "1" ]; then
 
   npx prisma generate
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
+
+  # Prisma CLI 在安卓环境检测 OS 异常，db push 找不到引擎
+  ENGINE_FILE=$(ls node_modules/@prisma/engines/schema-engine-* 2>/dev/null | head -1)
+  if [ -n "$ENGINE_FILE" ]; then
+    export PRISMA_SCHEMA_ENGINE_BINARY="$(pwd)/$ENGINE_FILE"
+    echo "  🔧 指定引擎: $ENGINE_FILE"
+  fi
+
   npx prisma db push
   npx prisma db seed
 
