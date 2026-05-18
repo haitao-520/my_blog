@@ -39,7 +39,6 @@ cd "$PROJECT_DIR/server"
 ARCH=$(uname -m)
 if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv8l" ]; then
   export PRISMA_CLI_BINARY_TARGETS="linux-arm64-openssl-3.0.x"
-  export PRISMA_QUERY_ENGINE_LIBRARY="linux-arm64-openssl-3.0.x"
   echo "  📱 检测到 ARM64 架构，已适配手机环境"
 else
   echo "  💻 检测到 x86_64 架构"
