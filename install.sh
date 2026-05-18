@@ -69,19 +69,27 @@ if [ "$ARCH_TYPE" = "arm64_proot" ]; then
   # 解决办法：临时注入 binaryTargets 到 schema.prisma，强制生成正确引擎。
   echo "  🔧 Proot Ubuntu 模式：注入 binaryTargets..."
 
+  # 如果上次失败残留了修改，先恢复（从 git）
+  if grep -q 'binaryTargets' prisma/schema.prisma 2>/dev/null; then
+    echo "  ⚠️  检测到残留 binaryTargets，先恢复原始 schema..."
+    git checkout prisma/schema.prisma 2>/dev/null || true
+    # git 不行就用 sed 干掉
+    sed -i '/binaryTargets/d' prisma/schema.prisma
+  fi
+
   # 备份原始 schema
   cp prisma/schema.prisma prisma/schema.prisma.bak
 
-  # 在 generator 块中注入 binaryTargets
+  # 无论成功失败都要恢复 schema
+  trap 'mv prisma/schema.prisma.bak prisma/schema.prisma 2>/dev/null; echo "  ✅ schema.prisma 已恢复"' EXIT
+
+  # 在 generator 块中注入 binaryTargets（只注入一次）
   sed -i '/^generator client {/a\  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]' prisma/schema.prisma
 
   npx prisma generate
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
   npx prisma db push
   npx prisma db seed
-
-  # 恢复原始 schema
-  mv prisma/schema.prisma.bak prisma/schema.prisma
 
 elif [ "$ARCH_TYPE" = "arm64" ]; then
   export PRISMA_CLI_BINARY_TARGETS="linux-arm64-openssl-3.0.x"
