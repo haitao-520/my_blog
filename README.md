@@ -1,6 +1,6 @@
 # 水镜雪的博客
 
-> Astro + React + Express + SQLite 全栈博客，手机/服务器双端可跑。
+> Astro + React + Express + SQLite 全栈博客，部署在云服务器。
 
 ---
 
@@ -76,10 +76,9 @@
 备注：作者名 {authorName} 由 settings 动态读取，无需手动改。
 ```
 
-### 📱 部署友好
-- ARM64 兼容，手机 Termux 可直接跑
+### 🚀 部署友好
 - `install.sh` 一键安装依赖 + 初始化数据库 + 启动三端
-- `start.sh` 带服务健康检查（8 次重试），适配 ARM64 慢启动
+- `start.sh` 带服务健康检查（8 次重试）
 - 打包自动排除 `node_modules`、`.git`、`*.db`，保护生产数据
 
 ---

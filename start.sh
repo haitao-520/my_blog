@@ -34,7 +34,7 @@ nohup npx vite --port 5173 --host > /tmp/blog-admin.log 2>&1 &
 
 sleep 2
 
-# 验证（带重试，ARM64 手机启动更慢）
+# 验证（带重试）
 echo ""
 echo "▶ 验证服务状态..."
 echo ""
