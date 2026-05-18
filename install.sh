@@ -104,8 +104,22 @@ if [ "$ARCH" = "arm64" ]; then
     gunzip -f node_modules/@prisma/engines/schema-engine.gz
     chmod +x node_modules/@prisma/engines/schema-engine
     export PRISMA_SCHEMA_ENGINE_BINARY="$(pwd)/node_modules/@prisma/engines/schema-engine"
-    echo "  ✅ 引擎已就绪"
+    echo "  ✅ schema 引擎已就绪"
   fi
+
+  # 同时下载查询引擎（Prisma Client 运行时用），Termux 里 "native" 生成的用不了
+  QUERY_ENGINE_URL="https://binaries.prisma.sh/all_commits/${PRISMA_COMMIT}/linux-arm64-openssl-3.0.x/libquery_engine.so.node.gz"
+  echo "  ⬇️  下载查询引擎: $QUERY_ENGINE_URL"
+  QUERY_ENGINE_DST="node_modules/.prisma/client/libquery_engine-linux-arm64-openssl-3.0.x.so.node"
+  curl -fsSL "$QUERY_ENGINE_URL" -o "${QUERY_ENGINE_DST}.gz" 2>&1 && {
+    gunzip -f "${QUERY_ENGINE_DST}.gz"
+    chmod +x "$QUERY_ENGINE_DST"
+    export PRISMA_QUERY_ENGINE_LIBRARY="$(pwd)/$QUERY_ENGINE_DST"
+    echo "  ✅ 查询引擎已就绪"
+  } || {
+    echo "  ⚠️  查询引擎下载失败，将使用 generate 生成的版本"
+    rm -f "${QUERY_ENGINE_DST}.gz"
+  }
 
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
 
