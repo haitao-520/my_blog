@@ -60,10 +60,7 @@ const adminUrl = isLocal ? 'http://localhost:5173' : '/admin';
       if (el) el.textContent = (data.siteViews || 0).toLocaleString();
     } catch { if (el) el.textContent = '-'; }
 
-    // 记录访问（sessionStorage 去重）
-    if (!sessionStorage.getItem('_sv')) {
-      sessionStorage.setItem('_sv', '1');
-      try { await fetch('/api/stats/site-view', { method: 'POST' }); } catch {}
-    }
+    // 记录访问
+    try { await fetch('/api/stats/site-view', { method: 'POST' }); } catch {}
   })();
 </script>
