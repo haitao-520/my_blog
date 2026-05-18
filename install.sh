@@ -80,16 +80,14 @@ if [ "$ARCH" = "arm64" ]; then
   npx prisma generate
 
   # 获取当前 Prisma 版本的 commit hash
-  PRISMA_VERSION=$(npx prisma --version 2>/dev/null | grep -oP 'Commit:\s*\K\S+' | head -1)
-  if [ -z "$PRISMA_VERSION" ]; then
-    PRISMA_VERSION=$(cat node_modules/prisma/package.json 2>/dev/null | grep -oP '"prisma":\s*"\^?\K[^"]+' | head -1)
-    PRISMA_VERSION=$(npm show prisma@$PRISMA_VERSION version 2>/dev/null | tail -1)
-    PRISMA_COMMIT=$(npm show prisma@$PRISMA_VERSION gitHead 2>/dev/null | head -c 40)
-  else
-    PRISMA_COMMIT="$PRISMA_VERSION"
+  # Prisma --version 输出到 stderr，需要 2>&1
+  PRISMA_COMMIT=$(npx prisma --version 2>&1 | grep -oE '[a-f0-9]{40}' | head -1)
+  if [ -z "$PRISMA_COMMIT" ]; then
+    # 备选：从已安装的包信息里取
+    PRISMA_COMMIT=$(node -e "console.log(require('prisma/package.json').prisma.enginesVersion || '')" 2>/dev/null || true)
   fi
 
-  echo "  📦 Prisma 版本: $(npx prisma --version 2>/dev/null | head -1)"
+  echo "  📦 Prisma 版本: $(npx prisma --version 2>&1 | head -1)"
   echo "  📦 Commit: $PRISMA_COMMIT"
 
   ENGINE_URL="https://binaries.prisma.sh/all_commits/${PRISMA_COMMIT}/linux-arm64-openssl-3.0.x/schema-engine.gz"
@@ -97,9 +95,9 @@ if [ "$ARCH" = "arm64" ]; then
 
   mkdir -p node_modules/@prisma/engines
   curl -fsSL "$ENGINE_URL" -o node_modules/@prisma/engines/schema-engine.gz 2>&1 || {
-    echo "  ❌ 下载失败，尝试备选方案..."
-    # 备选：用 npm 重新安装 prisma 以触发引擎下载
-    npm install @prisma/engines@${PRISMA_COMMIT} --save-dev 2>/dev/null || true
+    echo "  ❌ 下载失败"
+    # 清理空文件
+    rm -f node_modules/@prisma/engines/schema-engine.gz
   }
 
   if [ -f node_modules/@prisma/engines/schema-engine.gz ]; then
