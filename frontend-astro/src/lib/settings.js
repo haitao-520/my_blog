@@ -1,7 +1,7 @@
 // 带内存缓存的站点设置读取（避免每次 SSR 都 fetch）
 let cached = null;
 let cachedAt = 0;
-const TTL = 60_000; // 缓存 60 秒
+const TTL = 5_000; // 缓存 5 秒
 
 export async function getSiteSettings() {
   const now = Date.now();
