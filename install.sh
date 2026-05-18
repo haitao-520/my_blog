@@ -54,6 +54,17 @@ echo "▶ [3/3] 安装前端依赖 (frontend-astro)..."
 cd "$PROJECT_DIR/frontend-astro"
 npm install
 
+# ==================== ARM64 原生模块清理 ====================
+# Termux 原生环境里 .node 二进制模块会被 Android linker namespace 拦截，
+# 删掉让 Rollup/Vite 等自动降级到纯 JavaScript 实现。
+if [ "$ARCH" = "arm64" ]; then
+  echo ""
+  echo "  🧹 ARM64：清理不兼容的原生模块（Rollup 等）..."
+  find "$PROJECT_DIR" -path "*/node_modules/@rollup/rollup-android-*" -name "*.node" -delete 2>/dev/null || true
+  find "$PROJECT_DIR" -path "*/node_modules/@esbuild/android-*" -name "*.node" -delete 2>/dev/null || true
+  echo "  ✅ 原生模块已清理，Vite/Rollup 将使用 JS 模式"
+fi
+
 # ==================== 初始化数据库 ====================
 echo ""
 echo "▶ 初始化数据库..."
