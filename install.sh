@@ -18,9 +18,10 @@ echo "请选择你的运行环境："
 echo ""
 echo "  1) x86_64 云服务器（腾讯云/阿里云等）"
 echo "  2) ARM64 真 Linux（树莓派/ARM云服务器）"
-echo "  3) ARM64 Termux + Proot Ubuntu（安卓手机）"
+echo "  3) Termux（安卓手机直接安装）"
+echo "  4) Termux + Proot Ubuntu（安卓手机套娃）"
 echo ""
-read -p "请输入序号 [1-3]（默认1）: " SYS_CHOICE
+read -p "请输入序号 [1-4]（默认1）: " SYS_CHOICE
 SYS_CHOICE=${SYS_CHOICE:-1}
 echo ""
 
@@ -28,18 +29,27 @@ case "$SYS_CHOICE" in
   1)
     echo "  💻 已选择：x86_64 云服务器"
     ARCH_TYPE="x86_64"
+    USE_BINARY_TARGETS=""
     ;;
   2)
     echo "  📱 已选择：ARM64 真 Linux"
     ARCH_TYPE="arm64"
+    USE_BINARY_TARGETS=""
     ;;
   3)
-    echo "  📱 已选择：ARM64 Proot Ubuntu"
-    ARCH_TYPE="arm64_proot"
+    echo "  📱 已选择：Termux"
+    ARCH_TYPE="termux"
+    USE_BINARY_TARGETS="1"
+    ;;
+  4)
+    echo "  📱 已选择：Termux + Proot Ubuntu"
+    ARCH_TYPE="proot_ubuntu"
+    USE_BINARY_TARGETS="1"
     ;;
   *)
     echo "  ⚠️  无效输入，默认使用 x86_64"
     ARCH_TYPE="x86_64"
+    USE_BINARY_TARGETS=""
     ;;
 esac
 echo ""
@@ -64,16 +74,15 @@ echo ""
 echo "▶ 初始化数据库..."
 cd "$PROJECT_DIR/server"
 
-if [ "$ARCH_TYPE" = "arm64_proot" ]; then
-  # Proot Ubuntu: Prisma 检测 OS 为 "android"，引擎文件名会错乱。
+if [ "$USE_BINARY_TARGETS" = "1" ]; then
+  # Termux / Proot Ubuntu: Prisma 检测 OS 为 "android"，引擎文件会错乱。
   # 解决办法：临时注入 binaryTargets 到 schema.prisma，强制生成正确引擎。
-  echo "  🔧 Proot Ubuntu 模式：注入 binaryTargets..."
+  echo "  🔧 安卓环境：注入 binaryTargets..."
 
-  # 如果上次失败残留了修改，先恢复（从 git）
+  # 如果上次失败残留了修改，先恢复
   if grep -q 'binaryTargets' prisma/schema.prisma 2>/dev/null; then
     echo "  ⚠️  检测到残留 binaryTargets，先恢复原始 schema..."
     git checkout prisma/schema.prisma 2>/dev/null || true
-    # git 不行就用 sed 干掉
     sed -i '/binaryTargets/d' prisma/schema.prisma
   fi
 
@@ -83,7 +92,6 @@ if [ "$ARCH_TYPE" = "arm64_proot" ]; then
   # 无论成功失败都要恢复 schema
   trap 'mv prisma/schema.prisma.bak prisma/schema.prisma 2>/dev/null; echo "  ✅ schema.prisma 已恢复"' EXIT
 
-  # 在 generator 块中注入 binaryTargets（只注入一次）
   sed -i '/^generator client {/a\  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]' prisma/schema.prisma
 
   npx prisma generate
