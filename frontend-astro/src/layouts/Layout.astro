@@ -5,9 +5,7 @@ import { getSiteSettings } from '../lib/settings.js';
 const { siteTitle, siteDesc, authorName, adminUrl: rawAdminUrl } = await getSiteSettings();
 // 生产环境自动适配：如果 adminUrl 还是 localhost 但当前域名不是本地，自动用当前域名+5173
 const isLocal = Astro.url.hostname === 'localhost' || Astro.url.hostname === '127.0.0.1';
-const adminUrl = isLocal || !rawAdminUrl?.includes('localhost')
-  ? rawAdminUrl
-  : `http://${Astro.url.hostname}:5173`;
+const adminUrl = isLocal ? 'http://localhost:5173' : '/admin';
 ---
 
 <!doctype html>

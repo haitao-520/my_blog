@@ -8,6 +8,7 @@ export default defineConfig({
   devToolbar: { enabled: false },
   vite: {
     server: {
+      allowedHosts: ['www.haitaos.asia', 'haitaos.asia'],
       proxy: {
         '/api': 'http://localhost:3000',
         '/uploads': 'http://localhost:3000',

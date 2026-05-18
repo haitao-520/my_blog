@@ -31,7 +31,7 @@ export default function Layout() {
     navigate('/login');
   };
 
-  const frontendUrl = window.location.origin.replace(':5173', ':4321');
+  const frontendUrl = '/';
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
