@@ -59,6 +59,13 @@ check "http://localhost:3000/api/health" "后端 API"
 check "http://localhost:4321"           "Astro 前端"
 check "http://localhost:5173"           "React 后台"
 
+# 守护进程（自动保活）
+echo "▶ 启动保活守护..."
+pkill -f "keepalive.sh daemon" 2>/dev/null
+sleep 1
+nohup bash /home/blog/keepalive.sh daemon > /tmp/keepalive.log 2>&1 &
+echo "  ✅ 守护已启动 (每5分钟巡检)"
+
 # Cloudflare Tunnel
 echo "▶ 启动 Cloudflare Tunnel..."
 pkill -f "cloudflared tunnel" 2>/dev/null
