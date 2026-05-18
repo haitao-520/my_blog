@@ -39,15 +39,44 @@ cd "$PROJECT_DIR/server"
 ARCH=$(uname -m)
 if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv8l" ]; then
   export PRISMA_CLI_BINARY_TARGETS="linux-arm64-openssl-3.0.x"
+  export PRISMA_QUERY_ENGINE_LIBRARY="linux-arm64-openssl-3.0.x"
   echo "  📱 检测到 ARM64 架构，已适配手机环境"
 else
   echo "  💻 检测到 x86_64 架构"
 fi
 
 npx prisma generate
-# ARM64 手机环境：修复 Prisma 引擎二进制无执行权限
+
+# ARM64 手机环境：修复 Prisma 引擎二进制
 if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv8l" ]; then
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
+
+  # Proot Ubuntu 里 Prisma 可能检测 OS 为 "android"，
+  # 生成错误的 debian-openssl-1.1.x 文件名。手动修正。
+  ENGINE_DIR="node_modules/@prisma/engines"
+  CORRECT_ENGINE="$ENGINE_DIR/schema-engine-linux-arm64-openssl-3.0.x"
+
+  if [ ! -f "$CORRECT_ENGINE" ]; then
+    echo "  ⚠️  引擎文件不匹配，自动修复..."
+    # 如果存在其他 schema-engine 文件，复制为正确的文件名
+    WRONG_ENGINE=$(ls $ENGINE_DIR/schema-engine-* 2>/dev/null | head -1)
+    if [ -n "$WRONG_ENGINE" ] && [ "$WRONG_ENGINE" != "$CORRECT_ENGINE" ]; then
+      cp "$WRONG_ENGINE" "$CORRECT_ENGINE"
+      chmod +x "$CORRECT_ENGINE"
+      echo "  ✅ 已复制 $WRONG_ENGINE → $CORRECT_ENGINE"
+    fi
+  fi
+
+  # 确保 libquery_engine 也有正确版本
+  CORRECT_LIB="$ENGINE_DIR/libquery_engine-linux-arm64-openssl-3.0.x.so.node"
+  if [ ! -f "$CORRECT_LIB" ]; then
+    WRONG_LIB=$(ls $ENGINE_DIR/libquery_engine-*.so.node 2>/dev/null | head -1)
+    if [ -n "$WRONG_LIB" ] && [ "$WRONG_LIB" != "$CORRECT_LIB" ]; then
+      cp "$WRONG_LIB" "$CORRECT_LIB"
+      chmod +x "$CORRECT_LIB"
+      echo "  ✅ 已复制 $WRONG_LIB → $CORRECT_LIB"
+    fi
+  fi
 fi
 npx prisma db push
 npx prisma db seed
