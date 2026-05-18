@@ -59,15 +59,19 @@ check "http://localhost:3000/api/health" "后端 API"
 check "http://localhost:4321"           "Astro 前端"
 check "http://localhost:5173"           "React 后台"
 
+# Cloudflare Tunnel
+echo "▶ 启动 Cloudflare Tunnel..."
+pkill -f "cloudflared tunnel" 2>/dev/null
+sleep 1
+nohup cloudflared tunnel --config /root/.cloudflared/config.yml run > /tmp/cloudflared.log 2>&1 &
+sleep 2
+echo "  ✅ Cloudflare Tunnel 已启动 (日志: /tmp/cloudflared.log)"
+
 echo ""
 echo "=========================================="
 echo "  启动完成！"
 echo "=========================================="
-SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
-[ -z "$SERVER_IP" ] && SERVER_IP=$(ip addr show 2>/dev/null | grep 'inet ' | grep -v '127.0.0.1' | head -1 | awk '{print $2}' | cut -d/ -f1)
 echo ""
-echo "  前台: http://${SERVER_IP:-你的服务器IP}:4321"
-echo "  后台: http://${SERVER_IP:-你的服务器IP}:5173"
-echo ""
+echo "  域名: https://www.haitaos.asia"
+echo "  后台: https://www.haitaos.asia/admin"
 echo "  后台账号: admin / admin123"
-echo "=========================================="
