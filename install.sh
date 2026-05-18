@@ -73,7 +73,7 @@ if [ "$ARCH_TYPE" = "arm64_proot" ]; then
   cp prisma/schema.prisma prisma/schema.prisma.bak
 
   # 在 generator 块中注入 binaryTargets
-  sed -i '/^generator client {/a\  binaryTargets = ["linux-arm64-openssl-3.0.x"]' prisma/schema.prisma
+  sed -i '/^generator client {/a\  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]' prisma/schema.prisma
 
   npx prisma generate
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
