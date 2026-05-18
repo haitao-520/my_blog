@@ -13,74 +13,92 @@ echo ""
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
 
-# ---------- 后端 ----------
+# ==================== 系统选择 ====================
+echo "请选择你的运行环境："
+echo ""
+echo "  1) x86_64 云服务器（腾讯云/阿里云等）"
+echo "  2) ARM64 真 Linux（树莓派/ARM云服务器）"
+echo "  3) ARM64 Termux + Proot Ubuntu（安卓手机）"
+echo ""
+read -p "请输入序号 [1-3]（默认1）: " SYS_CHOICE
+SYS_CHOICE=${SYS_CHOICE:-1}
+echo ""
+
+case "$SYS_CHOICE" in
+  1)
+    echo "  💻 已选择：x86_64 云服务器"
+    ARCH_TYPE="x86_64"
+    ;;
+  2)
+    echo "  📱 已选择：ARM64 真 Linux"
+    ARCH_TYPE="arm64"
+    ;;
+  3)
+    echo "  📱 已选择：ARM64 Proot Ubuntu"
+    ARCH_TYPE="arm64_proot"
+    ;;
+  *)
+    echo "  ⚠️  无效输入，默认使用 x86_64"
+    ARCH_TYPE="x86_64"
+    ;;
+esac
+echo ""
+
+# ==================== 安装依赖 ====================
 echo "▶ [1/3] 安装后端依赖 (server)..."
 cd "$PROJECT_DIR/server"
 npm install
 
-# ---------- 管理后台 ----------
 echo ""
 echo "▶ [2/3] 安装管理后台依赖 (admin-react)..."
 cd "$PROJECT_DIR/admin-react"
 npm install
 
-# ---------- 前端 ----------
 echo ""
 echo "▶ [3/3] 安装前端依赖 (frontend-astro)..."
 cd "$PROJECT_DIR/frontend-astro"
 npm install
 
-# ---------- 初始化数据库 ----------
+# ==================== 初始化数据库 ====================
 echo ""
 echo "▶ 初始化数据库..."
 cd "$PROJECT_DIR/server"
 
-# 自动识别 CPU 架构，手机 ARM64 需要指定引擎
-ARCH=$(uname -m)
-if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv8l" ]; then
-  export PRISMA_CLI_BINARY_TARGETS="linux-arm64-openssl-3.0.x"
-  echo "  📱 检测到 ARM64 架构，已适配手机环境"
-else
-  echo "  💻 检测到 x86_64 架构"
-fi
+if [ "$ARCH_TYPE" = "arm64_proot" ]; then
+  # Proot Ubuntu: Prisma 检测 OS 为 "android"，引擎文件名会错乱。
+  # 解决办法：临时注入 binaryTargets 到 schema.prisma，强制生成正确引擎。
+  echo "  🔧 Proot Ubuntu 模式：注入 binaryTargets..."
 
-npx prisma generate
+  # 备份原始 schema
+  cp prisma/schema.prisma prisma/schema.prisma.bak
 
-# ARM64 手机环境：修复 Prisma 引擎二进制
-if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv8l" ]; then
+  # 在 generator 块中注入 binaryTargets
+  sed -i '/^generator client {/a\  binaryTargets = ["linux-arm64-openssl-3.0.x"]' prisma/schema.prisma
+
+  npx prisma generate
   chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
+  npx prisma db push
+  npx prisma db seed
 
-  # Proot Ubuntu 里 Prisma 可能检测 OS 为 "android"，
-  # 生成错误的 debian-openssl-1.1.x 文件名。手动修正。
-  ENGINE_DIR="node_modules/@prisma/engines"
-  CORRECT_ENGINE="$ENGINE_DIR/schema-engine-linux-arm64-openssl-3.0.x"
+  # 恢复原始 schema
+  mv prisma/schema.prisma.bak prisma/schema.prisma
 
-  if [ ! -f "$CORRECT_ENGINE" ]; then
-    echo "  ⚠️  引擎文件不匹配，自动修复..."
-    # 如果存在其他 schema-engine 文件，复制为正确的文件名
-    WRONG_ENGINE=$(ls $ENGINE_DIR/schema-engine-* 2>/dev/null | head -1)
-    if [ -n "$WRONG_ENGINE" ] && [ "$WRONG_ENGINE" != "$CORRECT_ENGINE" ]; then
-      cp "$WRONG_ENGINE" "$CORRECT_ENGINE"
-      chmod +x "$CORRECT_ENGINE"
-      echo "  ✅ 已复制 $WRONG_ENGINE → $CORRECT_ENGINE"
-    fi
-  fi
+elif [ "$ARCH_TYPE" = "arm64" ]; then
+  export PRISMA_CLI_BINARY_TARGETS="linux-arm64-openssl-3.0.x"
 
-  # 确保 libquery_engine 也有正确版本
-  CORRECT_LIB="$ENGINE_DIR/libquery_engine-linux-arm64-openssl-3.0.x.so.node"
-  if [ ! -f "$CORRECT_LIB" ]; then
-    WRONG_LIB=$(ls $ENGINE_DIR/libquery_engine-*.so.node 2>/dev/null | head -1)
-    if [ -n "$WRONG_LIB" ] && [ "$WRONG_LIB" != "$CORRECT_LIB" ]; then
-      cp "$WRONG_LIB" "$CORRECT_LIB"
-      chmod +x "$CORRECT_LIB"
-      echo "  ✅ 已复制 $WRONG_LIB → $CORRECT_LIB"
-    fi
-  fi
+  npx prisma generate
+  chmod +x node_modules/@prisma/engines/* 2>/dev/null || true
+  npx prisma db push
+  npx prisma db seed
+
+else
+  # x86_64 云服务器，直接走标准流程
+  npx prisma generate
+  npx prisma db push
+  npx prisma db seed
 fi
-npx prisma db push
-npx prisma db seed
 
-# ---------- 启动服务 ----------
+# ==================== 启动服务 ====================
 echo ""
 echo "▶ 初始化完成，启动服务..."
 cd "$PROJECT_DIR"
