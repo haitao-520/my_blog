@@ -343,4 +343,20 @@ async function likePost(req, res) {
   }
 }
 
-module.exports = { listPosts, getPost, createPost, updatePost, deletePost, likePost };
+// --------------- POST /api/posts/:slug/view ---------------
+async function viewPost(req, res) {
+  try {
+    const post = await prisma.post.update({
+      where: { slug: req.params.slug },
+      data: { viewCount: { increment: 1 } },
+      select: { id: true, slug: true, viewCount: true },
+    });
+    res.json(post);
+  } catch (err) {
+    console.error('[posts:view]', err);
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Post not found' });
+    res.status(500).json({ error: 'Failed to record view' });
+  }
+}
+
+module.exports = { listPosts, getPost, createPost, updatePost, deletePost, likePost, viewPost };

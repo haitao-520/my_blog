@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
-const { listPosts, getPost, createPost, updatePost, deletePost, likePost } = require('../controllers/postController');
+const { listPosts, getPost, createPost, updatePost, deletePost, likePost, viewPost } = require('../controllers/postController');
 
 const router = Router();
 
@@ -12,6 +12,9 @@ router.get('/:slug', getPost);
 router.post('/', requireAuth, createPost);
 router.put('/:id', requireAuth, updatePost);
 router.delete('/:id', requireAuth, deletePost);
+
+// 阅读计数（公开）
+router.post('/:slug/view', viewPost);
 
 // 点赞（公开）
 router.post('/:id/like', likePost);

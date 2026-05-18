@@ -42,7 +42,28 @@ const adminUrl = isLocal ? 'http://localhost:5173' : '/admin';
     <footer class="border-t border-gray-200 bg-white">
       <div class="max-w-5xl mx-auto px-5 py-6 text-center text-sm text-gray-500">
         <p>&copy; 2026 {authorName || siteTitle}. Powered by Astro &amp; Vue.</p>
+        <p class="mt-1">
+          👁️ 全站访问 <span id="site-views">···</span> 次
+        </p>
       </div>
     </footer>
   </body>
 </html>
+
+<script>
+  // 全站访问量统计（同会话只记一次）
+  (async () => {
+    const el = document.getElementById('site-views');
+    try {
+      const res = await fetch('/api/stats/public');
+      const data = await res.json();
+      if (el) el.textContent = (data.siteViews || 0).toLocaleString();
+    } catch { if (el) el.textContent = '-'; }
+
+    // 记录访问（sessionStorage 去重）
+    if (!sessionStorage.getItem('_sv')) {
+      sessionStorage.setItem('_sv', '1');
+      try { await fetch('/api/stats/site-view', { method: 'POST' }); } catch {}
+    }
+  })();
+</script>

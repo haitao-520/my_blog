@@ -113,6 +113,7 @@ const bodyHtml = post ? renderTiptap(post.content) : '';
           </time>
           {authorName && <span>👤 {authorName}</span>}
           <span class="inline-flex items-center gap-1.5">💬 {post.commentCount ?? 0} 条评论</span>
+          <span class="inline-flex items-center gap-1.5">👁️ {post.viewCount ?? 0} 次阅读</span>
         </div>
 
         {post.tags?.length > 0 && (
@@ -155,3 +156,13 @@ const bodyHtml = post ? renderTiptap(post.content) : '';
     </div>
   )}
 </Layout>
+
+<script>
+  // 文章阅读计数
+  (async () => {
+    const slug = window.location.pathname.replace(/^\/posts\//, '').replace(/\/$/, '');
+    if (slug) {
+      try { await fetch(`/api/posts/${slug}/view`, { method: 'POST' }); } catch {}
+    }
+  })();
+</script>
